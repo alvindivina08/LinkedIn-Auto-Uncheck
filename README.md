@@ -1,7 +1,3 @@
-Certainly! Here’s a more fun and engaging version of your README:
-
----
-
 # LinkedIn Auto Uncheck 🎉
 
 ## Are You Tired of Unchecking the "Follow Company" Button? 😩
