@@ -1,17 +1,18 @@
 {
-    "manifest_version": 3,
-    "name": "LinkedIn Auto Uncheck",
-    "version": "1.0",
-    "description": "Automatically unchecks the 'Follow company' option on LinkedIn job applications.",
-    "permissions": ["activeTab", "declarativeContent", "scripting"],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "content_scripts": [
+  "manifest_version": 2,
+  "name": "LinkedIn AutoFill Extension",
+  "version": "1.0",
+  "description": "Automatically fills in your name and phone number on LinkedIn forms.",
+  "permissions": [
+      "storage",
+      "activeTab",
+      "https://www.linkedin.com/*"
+  ],
+  "content_scripts": [
       {
-        "matches": ["*://www.linkedin.com/jobs/*"],
-        "js": ["content.js"]
+          "matches": ["https://www.linkedin.com/*"],
+          "js": ["content.js"]
       }
-    ]
-  }
-  
+  ],
+  "options_page": "options.html"
+}
