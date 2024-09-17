@@ -3,16 +3,30 @@
 <html>
 <head>
     <title>Extension Options</title>
+    <style>
+        /* Basic styling for better visualization */
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #qa-list { margin-top: 20px; }
+        .qa-item { margin-bottom: 10px; }
+        .qa-item input { width: 300px; }
+        .qa-item button { margin-left: 10px; }
+    </style>
 </head>
 <body>
     <h1>Settings</h1>
     <form id="options-form">
+        <h2>Personal Information</h2>
         <label for="firstName">First Name:</label><br>
         <input type="text" id="firstName"><br><br>
         <label for="lastName">Last Name:</label><br>
         <input type="text" id="lastName"><br><br>
         <label for="phoneNumber">Phone Number:</label><br>
         <input type="text" id="phoneNumber"><br><br>
+        
+        <h2>Question-Answer Pairs</h2>
+        <div id="qa-list"></div>
+        <button type="button" id="add-qa-button">Add Question-Answer Pair</button><br><br>
+        
         <button type="submit">Save</button>
     </form>
     <script src="options.js"></script>

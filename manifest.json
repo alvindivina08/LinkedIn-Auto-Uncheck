@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "LinkedIn AutoFill Extension",
-  "version": "1.0",
-  "description": "Automatically fills in your name and phone number on LinkedIn forms.",
+  "version": "1.1",
+  "description": "Automatically fills in your name, phone number, and custom question-answer pairs on LinkedIn forms.",
   "permissions": [
       "storage",
       "activeTab",

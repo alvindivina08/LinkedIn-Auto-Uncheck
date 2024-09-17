@@ -7,10 +7,23 @@ function saveOptions(e) {
     const lastName = document.getElementById('lastName').value;
     const phoneNumber = document.getElementById('phoneNumber').value;
 
+    // Get the question-answer pairs
+    const qaItems = document.querySelectorAll('.qa-item');
+    const qaPairs = [];
+
+    qaItems.forEach(item => {
+        const question = item.querySelector('.question').value;
+        const answer = item.querySelector('.answer').value;
+        if (question && answer) {
+            qaPairs.push({ question, answer });
+        }
+    });
+
     chrome.storage.sync.set({
-        firstName: firstName,
-        lastName: lastName,
-        phoneNumber: phoneNumber
+        firstName,
+        lastName,
+        phoneNumber,
+        qaPairs
     }, function() {
         alert('Options saved.');
     });
@@ -18,13 +31,47 @@ function saveOptions(e) {
 
 // Restore options from chrome.storage
 function restoreOptions() {
-    chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber'], function(items) {
+    chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber', 'qaPairs'], function(items) {
         document.getElementById('firstName').value = items.firstName || '';
         document.getElementById('lastName').value = items.lastName || '';
         document.getElementById('phoneNumber').value = items.phoneNumber || '';
+
+        // Restore question-answer pairs
+        const qaPairs = items.qaPairs || [];
+        qaPairs.forEach(addQaItem);
     });
+}
+
+function addQaItem(pair = {}) {
+    const qaList = document.getElementById('qa-list');
+    const div = document.createElement('div');
+    div.className = 'qa-item';
+
+    const questionInput = document.createElement('input');
+    questionInput.type = 'text';
+    questionInput.placeholder = 'Question';
+    questionInput.className = 'question';
+    questionInput.value = pair.question || '';
+
+    const answerInput = document.createElement('input');
+    answerInput.type = 'text';
+    answerInput.placeholder = 'Answer';
+    answerInput.className = 'answer';
+    answerInput.value = pair.answer || '';
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', () => {
+        qaList.removeChild(div);
+    });
+
+    div.appendChild(questionInput);
+    div.appendChild(answerInput);
+    div.appendChild(deleteButton);
+    qaList.appendChild(div);
 }
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('options-form').addEventListener('submit', saveOptions);
-    
+document.getElementById('add-qa-button').addEventListener('click', () => addQaItem());
