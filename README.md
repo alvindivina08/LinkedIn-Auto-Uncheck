@@ -25,6 +25,7 @@ This nifty Chrome extension automatically unchecks the "Follow company" box on L
 - **manifest.json**: The brains of the operation – tells Chrome what the extension is all about.
 - **background.js**: Keeps things running smoothly in the background.
 - **content.js**: The hero of the story – this script does the unchecking for you.
+- **options.html**: The database of your questions.
 
 ## Contributing 
 
