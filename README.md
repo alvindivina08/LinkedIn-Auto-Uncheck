@@ -33,4 +33,4 @@ Got ideas to make this even better? Fork the repo, make your changes, and send o
 
 ## License 
 
-This project is licensed under the MIT License. Because who needs more rules, right?
+This project is licensed under the MIT License, ensuring it’s free and open for anyone to use.
