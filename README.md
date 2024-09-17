@@ -8,6 +8,11 @@ We get it. You're on a job hunt, applying to multiple positions, and every singl
 
 This nifty Chrome extension automatically unchecks the "Follow company" box on LinkedIn job applications. So, you can focus on what really matters: landing that dream job! No more unnecessary follows, just pure, unadulterated efficiency.
 
+## Demo
+
+[Watch the demo on YouTube](https://www.youtube.com/watch?v=AVCjXgovXrs)
+
+
 ## How to Install 🧩
 
 1. **Download or clone this repo** to your computer.
