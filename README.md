@@ -1,5 +1,8 @@
 # LinkedIn Auto Uncheck 🎉
 
+## Update
+currently working on making it faster and allowing the user to just save the questions without going to options.html
+
 ## Are You Tired of Unchecking the "Follow Company" Button? 
 
 We get it. You're on a job hunt, applying to multiple positions, and every single time, LinkedIn throws that pesky "Follow company" checkbox at you. Who has time for that? Enter **LinkedIn Auto Uncheck** – your new best friend for job applications! 🚀
