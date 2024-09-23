@@ -1,5 +1,6 @@
 (function() {
-    let userInteracted = new Set(); // Store IDs of inputs where users manually entered data
+    let userInteracted = new Set();
+    let seenQuestions = new Set(); 
 
     function uncheckFollowCompany() {
         const followCheckbox = document.querySelector('input[type="checkbox"][id="follow-company-checkbox"]');
@@ -9,13 +10,17 @@
         }
     }
 
+    function getQuestionElements() {
+        return document.querySelectorAll('span, label, a');
+    }
+
     function startMonitoring() {
         const observer = new MutationObserver(() => {
             const form = document.querySelector('#jobs-apply-header');
             if (form) {
                 uncheckFollowCompany(); 
                 fillPersonalInfo();
-                fillCustomAnswers(() => observer.disconnect());
+                fillCustomAnswers();
                 const submitButton = document.querySelector('button[aria-label="Submit application"]');
                 if (submitButton) {
                     observer.disconnect(); // Stop observing mutations
@@ -31,12 +36,16 @@
     }
 
     function extractQuestions() {
-        const questionElements = document.querySelectorAll('span');
+        const questionElements =  getQuestionElements();
         const questions = new Set();
     
         questionElements.forEach(element => {
             const text = element.textContent.trim();
-            if (text.length > 0 && text.includes(`?`) || text.length > 0 && text.includes(`Do you`)) {
+            if (text.length > 0 && text.includes(`?`) || 
+                text.length > 0 && text.includes(`Do you`) || 
+                text.length > 0 && text.includes(`Race and ethnicity`) || 
+                text.length > 0 && text.includes(`Gender`) || 
+                text.includes(`Status`)) {
                 questions.add(text);
             }
         });
@@ -46,10 +55,11 @@
 
 
     function fillPersonalInfo() {
-        chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber'], function(items) {
+        chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber', 'city'], function(items) {
             const firstName = items.firstName || '';
             const lastName = items.lastName || '';
             const phoneNumber = items.phoneNumber || '';
+            const city = items.city || '';
 
             // Fill first name
             const firstNameInput = document.querySelector("input[name='firstName'], input[id*='firstName']");
@@ -71,29 +81,44 @@
                 phoneInput.value = phoneNumber;
                 phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            const cityInput = document.querySelector("input[id*='city'], input[name*='city']");
+            if (cityInput && !userInteracted.has(city.id)) {
+                console.log(city)
+                cityInput.value = city;
+                cityInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         });
     }
     
-    function fillCustomAnswers(onComplete) {
+    function fillCustomAnswers() {
         chrome.storage.sync.get('qaPairs', function(items) {
             const qaPairs = items.qaPairs || [];
             if (Array.isArray(qaPairs)) {
-                const allQuestions = extractQuestions()
-                const filteredQaPairs = qaPairs.filter(pair => allQuestions.has(pair.question));
-                console.log(filteredQaPairs)
-                fillAnswer(filteredQaPairs, onComplete);
+                const allQuestions = extractQuestions();
+                // Filter qaPairs and only include unseen questions
+                const filteredQaPairs = qaPairs.filter(pair => 
+                    allQuestions.has(pair.question) && !seenQuestions.has(pair.question)
+                );
 
+                if (filteredQaPairs.length > 0) {
+                    fillAnswer(filteredQaPairs, () => {
+                        // Mark the filtered pairs as seen after processing
+                        filteredQaPairs.forEach(pair => seenQuestions.add(pair.question));
+                    });
+                }
             } else {
                 console.error('qaPairs is not an array');
             }
         });
     }
-    
-    function fillAnswer(qaPairs, onComplete) {
+
+    function fillAnswer(qaPairs) {
         // Find all elements that might contain questions and answers
-        const allElements = document.querySelectorAll('span');
+        const allElements =  getQuestionElements();
         const userInteracted = new Set(); // Ensure you have this defined as you're checking it
         qaPairs.forEach(({question, answer}) => {
+            console.log(question)
             let found = false;
 
             for (const element of allElements) {
@@ -152,12 +177,6 @@
                         if (found) break; // Stop processing once a match is found
                     }
                 }
-            }
-
-            // TODO: it disconnects when there is multiple page of forms
-            // we gotta fix that
-            if (onComplete) {
-                onComplete();
             }
         });
     }

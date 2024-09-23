@@ -6,6 +6,8 @@ function saveOptions(e) {
     const firstName = document.getElementById('firstName').value;
     const lastName = document.getElementById('lastName').value;
     const phoneNumber = document.getElementById('phoneNumber').value;
+    const city = document.getElementById('city').value;
+
 
     // Get the question-answer pairs
     const qaItems = document.querySelectorAll('.qa-item');
@@ -23,6 +25,7 @@ function saveOptions(e) {
         firstName,
         lastName,
         phoneNumber,
+        city,
         qaPairs
     }, function() {
         alert('Options saved.');
@@ -31,10 +34,11 @@ function saveOptions(e) {
 
 // Restore options from chrome.storage
 function restoreOptions() {
-    chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber', 'qaPairs'], function(items) {
+    chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber','city', 'qaPairs'], function(items) {
         document.getElementById('firstName').value = items.firstName || '';
         document.getElementById('lastName').value = items.lastName || '';
         document.getElementById('phoneNumber').value = items.phoneNumber || '';
+        document.getElementById('city').value = items.city || '';
 
         // Restore question-answer pairs
         const qaPairs = items.qaPairs || [];
