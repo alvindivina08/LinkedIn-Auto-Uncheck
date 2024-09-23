@@ -1,7 +1,7 @@
 # LinkedIn Auto Uncheck 🎉
 
 ## Update
-currently working on making it faster and allowing the user to just save the questions without going to options.html
+currently working on performance and allowing the user to just save the questions without going to options.html
 
 ## Are You Tired of Unchecking the "Follow Company" Button? 
 
