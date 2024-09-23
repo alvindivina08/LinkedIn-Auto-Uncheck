@@ -1,6 +1,4 @@
 (function() {
-    console.log('LinkedIn AutoFill script loaded');
-
     let userInteracted = new Set(); // Store IDs of inputs where users manually entered data
 
     function uncheckFollowCompany() {
@@ -8,25 +6,44 @@
         
         if (followCheckbox && followCheckbox.checked && !userInteracted.has(followCheckbox.id)) {
             followCheckbox.checked = false;
-            console.log('Checkbox unchecked');
         }
     }
 
     function startMonitoring() {
-        console.log('Starting to monitor for changes...');
         const observer = new MutationObserver(() => {
-            uncheckFollowCompany(); 
-            fillPersonalInfo();
-            fillCustomAnswers();
+            const form = document.querySelector('#jobs-apply-header');
+            if (form) {
+                uncheckFollowCompany(); 
+                fillPersonalInfo();
+                fillCustomAnswers(() => observer.disconnect());
+                const submitButton = document.querySelector('button[aria-label="Submit application"]');
+                if (submitButton) {
+                    observer.disconnect(); // Stop observing mutations
+                }
+            }
         });
 
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
-
         uncheckFollowCompany();
     }
+
+    function extractQuestions() {
+        const questionElements = document.querySelectorAll('span');
+        const questions = new Set();
+    
+        questionElements.forEach(element => {
+            const text = element.textContent.trim();
+            if (text.length > 0 && text.includes(`?`) || text.length > 0 && text.includes(`Do you`)) {
+                questions.add(text);
+            }
+        });
+    
+        return questions;
+    }
+
 
     function fillPersonalInfo() {
         chrome.storage.sync.get(['firstName', 'lastName', 'phoneNumber'], function(items) {
@@ -56,117 +73,103 @@
             }
         });
     }
-
-    function fillCustomAnswers() {
+    
+    function fillCustomAnswers(onComplete) {
         chrome.storage.sync.get('qaPairs', function(items) {
             const qaPairs = items.qaPairs || [];
-            qaPairs.forEach(pair => {
-                fillAnswer(pair.question, pair.answer);
-            });
+            if (Array.isArray(qaPairs)) {
+                const allQuestions = extractQuestions()
+                const filteredQaPairs = qaPairs.filter(pair => allQuestions.has(pair.question));
+                console.log(filteredQaPairs)
+                fillAnswer(filteredQaPairs, onComplete);
+
+            } else {
+                console.error('qaPairs is not an array');
+            }
         });
     }
-
-    function fillAnswer(questionText, answerText) {
-        // Find all elements that might contain the question text
-        const allElements = document.querySelectorAll('label, div, span, p');
-        let found = false;
     
-        outerLoop:
-        for (const element of allElements) {
-            if (element.textContent.trim().includes(questionText)) {
-                // Find the nearest container that includes both the question and answers
-                const formContainer = element.closest('form, div'); // Adjust as necessary
-                if (formContainer) {
-                    // Find all labels and inputs within this container
-                    const labels = formContainer.querySelectorAll('label');
-                    for (const label of labels) {
-                        const labelText = label.textContent.trim();
-                        // Check for radio and checkbox inputs
-                        if (labelText === answerText) {
-                            const inputId = label.getAttribute('for');
-                            if (inputId) {
+    function fillAnswer(qaPairs, onComplete) {
+        // Find all elements that might contain questions and answers
+        const allElements = document.querySelectorAll('span');
+        const userInteracted = new Set(); // Ensure you have this defined as you're checking it
+        qaPairs.forEach(({question, answer}) => {
+            let found = false;
+
+            for (const element of allElements) {
+                const elementText = element.textContent.trim();
+
+                if (elementText.includes(question)) {
+                    // Find the nearest container that includes both the question and answers
+                    const formContainer = element.closest('form, div'); // Adjust as necessary
+                    if (formContainer) {
+                        // Combine finding inputs and labels to reduce loops
+                        const inputsAndLabels = formContainer.querySelectorAll('label, input, select');
+
+                        for (const item of inputsAndLabels) {
+                            // Check for matching labels for radio/checkbox
+                            if (item.tagName.toLowerCase() === 'label' && item.textContent.trim() === answer) {
+                                const inputId = item.getAttribute('for');
                                 const input = document.getElementById(inputId);
                                 if (input && (input.type === 'radio' || input.type === 'checkbox') && !userInteracted.has(inputId)) {
                                     input.checked = true;
                                     input.dispatchEvent(new Event('change', { bubbles: true }));
+                                    userInteracted.add(inputId);
                                     found = true;
-                                    console.log(`Selected "${answerText}" for question "${questionText}"`);
-                                    break outerLoop; // Exit both loops after finding the match
+                                    break;
                                 }
                             }
-                        }
-                    }
-                    
-                    // Check for text input fields
-                    const textInputs = formContainer.querySelectorAll('input[type="text"]');
-                    for (const input of textInputs) {
-                        const label = formContainer.querySelector(`label[for="${input.id}"]`);
-                        if (label && label.textContent.trim().includes(questionText) && !userInteracted.has(input.id)) {
-                            input.value = answerText;
-                            input.dispatchEvent(new Event('input', { bubbles: true }));
-                            found = true;
-                            console.log(`Filled text input with "${answerText}" for question "${questionText}"`);
-                            break outerLoop;
-                        }
-                    }
 
-                    // Check for select dropdowns
-                    const selectInputs = formContainer.querySelectorAll('select');
-                    for (const select of selectInputs) {
-                        // Attempt to find the label associated with the select element
-                        const escapedId = CSS.escape(select.id);
-                        let label = formContainer.querySelector(`label[for="${escapedId}"]`);
-                        console.log(`label = ${label}`);
-    
-                        if (!label) {
-                            // If no label with 'for' attribute, check if the current element is the label
-                            if (element.contains(select) || select.contains(element) || element.nextElementSibling === select || element === select.previousElementSibling) {
-                                label = element;
-                            } else {
-                                // Check preceding sibling elements
-                                let prevElement = select.previousElementSibling;
-                                while (prevElement) {
-                                    if (prevElement.textContent.trim().includes(questionText)) {
-                                        label = prevElement;
-                                        break;
-                                    }
-                                    prevElement = prevElement.previousElementSibling;
-                                }
-                            }
-                        }
-    
-                        if (label && label.textContent.trim().includes(questionText) && !userInteracted.has(select.id || select.name)) {
-                            for (const option of select.options) {
-                                if (option.textContent.trim() === answerText) {
-                                    select.value = option.value;
-                                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                            // Check for text inputs
+                            if (item.tagName.toLowerCase() === 'input' && item.type === 'text') {
+                                const label = formContainer.querySelector(`label[for="${item.id}"]`);
+                                if (label && label.textContent.trim().includes(question) && !userInteracted.has(item.id)) {
+                                    item.value = answer;
+                                    item.dispatchEvent(new Event('input', { bubbles: true }));
+                                    userInteracted.add(item.id);
                                     found = true;
-                                    console.log(`Selected "${answerText}" for question "${questionText}" from dropdown`);
-                                    break outerLoop;
+                                    break;
+                                }
+                            }
+
+                            // Check for select dropdowns
+                            if (item.tagName.toLowerCase() === 'select') {
+                                const label = formContainer.querySelector(`label[for="${CSS.escape(item.id)}"]`);
+                                if (label && label.textContent.trim().includes(question) && !userInteracted.has(item.id)) {
+                                    for (const option of item.options) {
+                                        if (option.textContent.trim() === answer) {
+                                            item.value = option.value;
+                                            item.dispatchEvent(new Event('change', { bubbles: true }));
+                                            userInteracted.add(item.id);
+                                            found = true;
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                         }
+
+                        if (found) break; // Stop processing once a match is found
                     }
                 }
             }
-        }
-    
-        if (!found) {
-            console.log(`Could not find question "${questionText}" or answer "${answerText}"`);
-        }
+
+            // TODO: it disconnects when there is multiple page of forms
+            // we gotta fix that
+            if (onComplete) {
+                onComplete();
+            }
+        });
     }
 
-    // Add event listeners to detect user interaction and prevent further autofill on those inputs
     function addManualInputListener() {
         const allInputs = document.querySelectorAll('input, select');
         allInputs.forEach(input => {
             input.addEventListener('input', () => {
                 userInteracted.add(input.id); // Mark this input as manually edited
-                console.log(`User manually filled input: ${input.id}`);
             });
             input.addEventListener('change', () => {
                 userInteracted.add(input.id); // Also listen for changes on select elements
-                console.log(`User manually changed select: ${input.id}`);
             });
         });
     }
@@ -176,11 +179,10 @@
         const currentUrl = location.href;
         if (currentUrl !== lastUrl) {
             lastUrl = currentUrl;
-            console.log('URL changed, re-checking...');
             startMonitoring(); 
         }
     }).observe(document, { subtree: true, childList: true });
 
-    startMonitoring();
-    addManualInputListener(); // Start listening for manual inputs
+    startMonitoring(); 
+    addManualInputListener()
 })();
