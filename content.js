@@ -1,6 +1,7 @@
 (function() {
     let userInteracted = new Set();
     let seenQuestions = new Set(); 
+    let filledQuestions = new Set(); 
 
     function uncheckFollowCompany() {
         const followCheckbox = document.querySelector('input[type="checkbox"][id="follow-company-checkbox"]');
@@ -118,63 +119,65 @@
         const allElements =  getQuestionElements();
         const userInteracted = new Set(); // Ensure you have this defined as you're checking it
         qaPairs.forEach(({question, answer}) => {
-            console.log(question)
-            let found = false;
-
-            for (const element of allElements) {
-                const elementText = element.textContent.trim();
-
-                if (elementText.includes(question)) {
-                    // Find the nearest container that includes both the question and answers
-                    const formContainer = element.closest('form, div'); // Adjust as necessary
-                    if (formContainer) {
-                        // Combine finding inputs and labels to reduce loops
-                        const inputsAndLabels = formContainer.querySelectorAll('label, input, select');
-
-                        for (const item of inputsAndLabels) {
-                            // Check for matching labels for radio/checkbox
-                            if (item.tagName.toLowerCase() === 'label' && item.textContent.trim() === answer) {
-                                const inputId = item.getAttribute('for');
-                                const input = document.getElementById(inputId);
-                                if (input && (input.type === 'radio' || input.type === 'checkbox') && !userInteracted.has(inputId)) {
-                                    input.checked = true;
-                                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                                    userInteracted.add(inputId);
-                                    found = true;
-                                    break;
+            if (!filledQuestions.has(question)) {
+                filledQuestions.add(question)
+                console.log(question)
+                let found = false;
+                for (const element of allElements) {
+                    const elementText = element.textContent.trim();
+    
+                    if (elementText.includes(question)) {
+                        // Find the nearest container that includes both the question and answers
+                        const formContainer = element.closest('form, div'); // Adjust as necessary
+                        if (formContainer) {
+                            // Combine finding inputs and labels to reduce loops
+                            const inputsAndLabels = formContainer.querySelectorAll('label, input, select');
+    
+                            for (const item of inputsAndLabels) {
+                                // Check for matching labels for radio/checkbox
+                                if (item.tagName.toLowerCase() === 'label' && item.textContent.trim() === answer) {
+                                    const inputId = item.getAttribute('for');
+                                    const input = document.getElementById(inputId);
+                                    if (input && (input.type === 'radio' || input.type === 'checkbox') && !userInteracted.has(inputId)) {
+                                        input.checked = true;
+                                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                                        userInteracted.add(inputId);
+                                        found = true;
+                                        break;
+                                    }
                                 }
-                            }
-
-                            // Check for text inputs
-                            if (item.tagName.toLowerCase() === 'input' && item.type === 'text') {
-                                const label = formContainer.querySelector(`label[for="${item.id}"]`);
-                                if (label && label.textContent.trim().includes(question) && !userInteracted.has(item.id)) {
-                                    item.value = answer;
-                                    item.dispatchEvent(new Event('input', { bubbles: true }));
-                                    userInteracted.add(item.id);
-                                    found = true;
-                                    break;
+    
+                                // Check for text inputs
+                                if (item.tagName.toLowerCase() === 'input' && item.type === 'text') {
+                                    const label = formContainer.querySelector(`label[for="${item.id}"]`);
+                                    if (label && label.textContent.trim().includes(question) && !userInteracted.has(item.id)) {
+                                        item.value = answer;
+                                        item.dispatchEvent(new Event('input', { bubbles: true }));
+                                        userInteracted.add(item.id);
+                                        found = true;
+                                        break;
+                                    }
                                 }
-                            }
-
-                            // Check for select dropdowns
-                            if (item.tagName.toLowerCase() === 'select') {
-                                const label = formContainer.querySelector(`label[for="${CSS.escape(item.id)}"]`);
-                                if (label && label.textContent.trim().includes(question) && !userInteracted.has(item.id)) {
-                                    for (const option of item.options) {
-                                        if (option.textContent.trim() === answer) {
-                                            item.value = option.value;
-                                            item.dispatchEvent(new Event('change', { bubbles: true }));
-                                            userInteracted.add(item.id);
-                                            found = true;
-                                            break;
+    
+                                // Check for select dropdowns
+                                if (item.tagName.toLowerCase() === 'select') {
+                                    const label = formContainer.querySelector(`label[for="${CSS.escape(item.id)}"]`);
+                                    if (label && label.textContent.trim().includes(question) && !userInteracted.has(item.id)) {
+                                        for (const option of item.options) {
+                                            if (option.textContent.trim() === answer) {
+                                                item.value = option.value;
+                                                item.dispatchEvent(new Event('change', { bubbles: true }));
+                                                userInteracted.add(item.id);
+                                                found = true;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
                             }
+    
+                            if (found) break; // Stop processing once a match is found
                         }
-
-                        if (found) break; // Stop processing once a match is found
                     }
                 }
             }
